@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% block title %}Access Shared File – SecureVault{% endblock %}
+
+{% block content %}
+<div class="share-page">
+
+  <!-- Header -->
+  <div class="share-hero">
+    <div class="share-hero-icon">🔐</div>
+    <h1 class="share-hero-title">Secure File Access</h1>
+    <p class="share-hero-desc">
+      Enter your share code and decryption password to download the file.
+    </p>
+  </div>
+
+  <!-- Card -->
+  <div class="share-card">
+
+    <!-- Steps indicator -->
+    <div class="share-steps">
+      <div class="share-step active">
+        <span class="ss-num">1</span>
+        <span class="ss-label">Enter Code</span>
+      </div>
+      <div class="share-step-line"></div>
+      <div class="share-step">
+        <span class="ss-num">2</span>
+        <span class="ss-label">Enter Password</span>
+      </div>
+      <div class="share-step-line"></div>
+      <div class="share-step">
+        <span class="ss-num">3</span>
+        <span class="ss-label">Download File</span>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('share_access') }}" class="share-form">
+
+      <!-- Share Code -->
+      <div class="form-group">
+        <label for="code">🔑 Share Code</label>
+        <input
+          type="text"
+          id="code"
+          name="code"
+          value="{{ code or '' }}"
+          placeholder="e.g. A1B2C3D4"
+          required
+          maxlength="8"
+          autocomplete="off"
+          class="share-code-input"
+          oninput="this.value = this.value.toUpperCase()"
+        />
+        <small class="hint">8-character code shared by the file owner</small>
+      </div>
+
+      <!-- Decryption Password -->
+      <div class="form-group">
+        <label for="password">🔒 Decryption Password</label>
+        <div class="input-with-toggle">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter the password given by the owner"
+            required
+            autocomplete="off"
+          />
+          <button type="button" class="toggle-pw" onclick="togglePassword('password')">👁</button>
+        </div>
+        <small class="hint">The password the owner used to encrypt the file</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full btn-lg">
+        🔓 Decrypt &amp; Download File
+      </button>
+
+    </form>
+
+    <!-- Info box -->
+    <div class="share-info-box">
+      <div class="sib-row">
+        <span class="sib-icon">🛡️</span>
+        <span>File is decrypted locally on the server and sent directly to you</span>
+      </div>
+      <div class="sib-row">
+        <span class="sib-icon">⏱️</span>
+        <span>Share codes expire after 7 days</span>
+      </div>
+      <div class="sib-row">
+        <span class="sib-icon">📥</span>
+        <span>Each code allows up to 10 downloads</span>
+      </div>
+      <div class="sib-row">
+        <span class="sib-icon">🔑</span>
+        <span>Only the correct password will unlock the file</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Don't have a code? -->
+  <div class="share-footer-note">
+    Want to share your own files?
+    <a href="{{ url_for('register') }}">Create a free account</a>
+    or
+    <a href="{{ url_for('login') }}">Login</a>
+  </div>
+
+</div>
+
+<style>
+/* ── Share Page Styles ── */
+.share-page {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.share-hero { text-align: center; }
+.share-hero-icon { font-size: 56px; margin-bottom: 12px; animation: pulse 2.5s ease-in-out infinite; }
+.share-hero-title { font-size: 28px; font-weight: 900; color: var(--text); margin-bottom: 8px; }
+.share-hero-desc  { font-size: 14px; color: var(--text-light); line-height: 1.6; }
+
+.share-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  padding: 36px 40px;
+  width: 100%;
+  backdrop-filter: blur(12px);
+}
+
+/* Steps */
+.share-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 32px;
+}
+.share-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ss-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.share-step.active .ss-num {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(79,70,229,.2);
+}
+.ss-label { font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.share-step.active .ss-label { color: var(--primary); }
+.share-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  min-width: 40px;
+  margin-bottom: 18px;
+}
+
+/* Form */
+.share-form { display: flex; flex-direction: column; gap: 20px; }
+
+.share-code-input {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  letter-spacing: 6px !important;
+  text-align: center !important;
+  text-transform: uppercase;
+  padding: 14px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 2px solid var(--border) !important;
+  background: var(--bg) !important;
+  color: var(--primary) !important;
+  width: 100%;
+  font-family: 'Courier New', monospace !important;
+  transition: var(--transition);
+}
+.share-code-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px rgba(79,70,229,.15) !important;
+  outline: none !important;
+}
+
+/* Info box */
+.share-info-box {
+  margin-top: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sib-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-light);
+}
+.sib-icon { font-size: 15px; flex-shrink: 0; }
+
+.share-footer-note {
+  font-size: 13.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 540px) {
+  .share-card { padding: 24px 20px; }
+  .share-hero-title { font-size: 22px; }
+  .share-step-line { min-width: 20px; }
+}
+</style>
+{% endblock %}

@@ -325,3 +325,52 @@ function drawSecurityChart() {
   ctx.fillStyle = '#607d8b';
   ctx.fillText('files', cx, cy + 20);
 }
+
+// ── Share Modal Controls ──────────────────────────────────────
+
+function openShareModal(filename) {
+  const modal = document.getElementById('shareModal');
+  if (!modal) return;
+  document.getElementById('shareFileName').textContent = filename;
+  document.getElementById('shareFileInput').value      = filename;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function openShareCodeModal(filename, token, downloads, maxDownloads) {
+  const modal = document.getElementById('shareCodeModal');
+  if (!modal) return;
+
+  document.getElementById('scFileName').textContent  = filename;
+  document.getElementById('scCode').textContent      = token;
+  document.getElementById('scDownloads').textContent = downloads;
+  document.getElementById('scMax').textContent       = maxDownloads;
+
+  // Build share link
+  const shareUrl = `${window.location.origin}/share?code=${token}`;
+  document.getElementById('scLink').textContent = shareUrl;
+
+  // Set revoke form action
+  document.getElementById('revokeForm').action = `/share/revoke/${token}`;
+
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function copyShareCode() {
+  const code = document.getElementById('scCode').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copyCodeBtn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
+  });
+}
+
+function copyShareLink() {
+  const link = document.getElementById('scLink').textContent;
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.querySelector('.copy-link-btn');
+    btn.textContent = '✅';
+    setTimeout(() => btn.textContent = '📋', 2000);
+  });
+}

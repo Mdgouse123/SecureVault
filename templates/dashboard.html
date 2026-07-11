@@ -178,7 +178,14 @@
                 {% elif file.name.endswith(('.mp3','.wav','.aac','.ogg')) %}🎵
                 {% else %}📄{% endif %}
               </span>
-              <span class="file-name-text">{{ file.name }}</span>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <span class="file-name-text">{{ file.name }}</span>
+                {% if file.share_token %}
+                <span class="share-code-badge" onclick="openShareCodeModal('{{ file.name }}','{{ file.share_token }}','{{ file.share_downloads }}','{{ file.share_max }}')">
+                  🔗 {{ file.share_token }}
+                </span>
+                {% endif %}
+              </div>
             </td>
             <td class="file-size">{{ file.size }}</td>
             <td>
@@ -238,6 +245,22 @@
                       onclick="openRenameModal('{{ file.name }}')">
                 ✏️ Rename
               </button>
+
+              {% if file.is_encrypted %}
+              {% if file.share_token %}
+              <button class="action-btn share-btn active-share"
+                      title="View share code"
+                      onclick="openShareCodeModal('{{ file.name }}','{{ file.share_token }}','{{ file.share_downloads }}','{{ file.share_max }}')">
+                🔗 Shared
+              </button>
+              {% else %}
+              <button class="action-btn share-btn"
+                      title="Create share code"
+                      onclick="openShareModal('{{ file.name }}')">
+                🔗 Share
+              </button>
+              {% endif %}
+              {% endif %}
 
               <form method="POST" action="{{ url_for('delete', filename=file.name) }}"
                     style="display:inline"
@@ -302,6 +325,21 @@
           </div>
           <small class="hint">⚠️ Remember this password — it's the only way to decrypt your file.</small>
         </div>
+
+        <!-- Share toggle -->
+        <div class="share-toggle-wrap">
+          <label class="share-toggle-label">
+            <input type="checkbox" name="create_share" id="createShare" value="on"/>
+            <span class="share-toggle-box">
+              <span class="stb-icon">🔗</span>
+              <span>
+                <strong>Generate Share Code</strong>
+                <small>Anyone with this code + password can download the file</small>
+              </span>
+            </span>
+          </label>
+        </div>
+
         <div class="modal-actions">
           <button type="submit" class="btn btn-primary">🔒 Encrypt Now</button>
           <button type="button" class="btn btn-outline" onclick="closeModalById('encryptModal')">Cancel</button>
@@ -410,5 +448,250 @@
     </div>
   </div>
 </div>
+
+<!-- ── CREATE SHARE MODAL ── -->
+<div class="modal-overlay" id="shareModal" onclick="closeModal(event,'shareModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <span class="modal-icon">🔗</span>
+        <h3>Create Share Code</h3>
+      </div>
+      <button class="modal-close" onclick="closeModalById('shareModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-file-info">
+        <span class="mfi-label">File:</span>
+        <span class="mfi-name" id="shareFileName"></span>
+      </div>
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;">
+        Enter the decryption password for this file. A unique 8-character share code will be generated.
+        Anyone with the code + password can download the decrypted file.
+      </p>
+      <form method="POST" action="{{ url_for('create_share') }}">
+        <input type="hidden" name="filename" id="shareFileInput"/>
+        <div class="form-group">
+          <label>Decryption Password</label>
+          <div class="input-with-toggle">
+            <input type="password" name="password" id="sharePw"
+                   placeholder="Enter encryption password" required/>
+            <button type="button" class="toggle-pw" onclick="togglePassword('sharePw')">👁</button>
+          </div>
+          <small class="hint">This is the password used to encrypt the file.</small>
+        </div>
+        <div class="share-info-row">
+          <span>⏱️ Expires in <strong>7 days</strong></span>
+          <span>📥 Max <strong>10 downloads</strong></span>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">🔗 Generate Share Code</button>
+          <button type="button" class="btn btn-outline" onclick="closeModalById('shareModal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── VIEW SHARE CODE MODAL ── -->
+<div class="modal-overlay" id="shareCodeModal" onclick="closeModal(event,'shareCodeModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <span class="modal-icon">🔗</span>
+        <h3>Share Code</h3>
+      </div>
+      <button class="modal-close" onclick="closeModalById('shareCodeModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">
+        File: <strong id="scFileName"></strong>
+      </p>
+
+      <!-- Code display -->
+      <div class="share-code-display">
+        <span id="scCode"></span>
+        <button class="copy-code-btn" id="copyCodeBtn" onclick="copyShareCode()">📋 Copy</button>
+      </div>
+
+      <!-- Share link -->
+      <div class="share-link-wrap">
+        <span class="share-link-label">Share Link:</span>
+        <div class="share-link-box">
+          <span id="scLink"></span>
+          <button class="copy-link-btn" onclick="copyShareLink()">📋</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="share-stats-row">
+        <div class="share-stat">
+          <span class="sstat-val" id="scDownloads"></span>
+          <span class="sstat-label">Downloads used</span>
+        </div>
+        <div class="share-stat">
+          <span class="sstat-val" id="scMax"></span>
+          <span class="sstat-label">Max downloads</span>
+        </div>
+        <div class="share-stat">
+          <span class="sstat-val">7d</span>
+          <span class="sstat-label">Validity</span>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <form method="POST" id="revokeForm" action="">
+          <button type="submit" class="btn btn-danger"
+                  onclick="return confirm('Revoke this share code? Anyone with the code will lose access.')">
+            🚫 Revoke Code
+          </button>
+        </form>
+        <button type="button" class="btn btn-outline" onclick="closeModalById('shareCodeModal')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Share toggle in encrypt modal */
+.share-toggle-wrap {
+  margin: 4px 0;
+}
+.share-toggle-label {
+  cursor: pointer;
+  display: block;
+}
+.share-toggle-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  transition: var(--transition);
+}
+.share-toggle-label input:checked + .share-toggle-box {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.share-toggle-box .stb-icon { font-size: 20px; flex-shrink: 0; }
+.share-toggle-box strong { font-size: 13.5px; color: var(--text); display: block; }
+.share-toggle-box small  { font-size: 11.5px; color: var(--muted); }
+
+/* Share code badge in file table */
+.share-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: var(--transition);
+  font-family: 'Courier New', monospace;
+}
+.share-code-badge:hover { background: #0369a1; color: #fff; }
+
+/* Share buttons */
+.share-btn {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.share-btn:hover { background: #0369a1; color: #fff; }
+.share-btn.active-share {
+  background: #0369a1;
+  color: #fff;
+}
+
+/* Share info row */
+.share-info-row {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0 4px;
+}
+
+/* Share code display */
+.share-code-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+#scCode {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--primary);
+  font-family: 'Courier New', monospace;
+}
+.copy-code-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.copy-code-btn:hover { background: var(--primary-dark); }
+
+/* Share link */
+.share-link-wrap {
+  margin-bottom: 14px;
+}
+.share-link-label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 6px; }
+.share-link-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--primary);
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+}
+.copy-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.copy-link-btn:hover { opacity: 1; }
+
+/* Share stats */
+.share-stats-row {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.share-stat {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border-right: 1px solid var(--border);
+}
+.share-stat:last-child { border-right: none; }
+.sstat-val   { display: block; font-size: 20px; font-weight: 900; color: var(--primary); }
+.sstat-label { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
 
 {% endblock %}

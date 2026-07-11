@@ -4,9 +4,11 @@ Main Flask application entry point.
 """
 
 import os
+import tempfile
+from datetime import datetime, timedelta
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, flash, send_file, session
+    url_for, flash, send_file, session, jsonify
 )
 from flask_login import (
     login_user, logout_user, login_required, current_user
@@ -14,7 +16,7 @@ from flask_login import (
 from werkzeug.utils import secure_filename
 
 from extensions import db, login_manager
-from modules.auth import User
+from modules.auth import User, ShareToken
 from modules.encryption import encrypt_file, decrypt_file
 from modules.signature import generate_key_pair, sign_file, verify_signature
 
@@ -171,19 +173,30 @@ def dashboard():
         fpath = os.path.join(upload_dir, f)
         if os.path.isfile(fpath) and not f.endswith('.sig'):
             size = os.path.getsize(fpath)
+
+            # Get active share token for this file if any
+            share = ShareToken.query.filter_by(
+                owner_username=current_user.username,
+                filename=f,
+                is_active=True
+            ).order_by(ShareToken.created_at.desc()).first()
+
             files.append({
-                'name': f,
-                'size': f'{size / 1024:.1f} KB',
-                'is_encrypted': f.endswith('.enc'),
-                'has_signature': os.path.exists(fpath + '.sig')
+                'name':          f,
+                'size':          f'{size / 1024:.1f} KB',
+                'is_encrypted':  f.endswith('.enc'),
+                'has_signature': os.path.exists(fpath + '.sig'),
+                'share_token':   share.token if share and share.is_valid else None,
+                'share_downloads': share.download_count if share else 0,
+                'share_max':     share.max_downloads if share else 10,
             })
 
     # Load public key for key viewer modal
     pub_key_pem = None
     pub_key_path = os.path.join(KEYS_FOLDER, f'{current_user.username}_public.pem')
     if os.path.exists(pub_key_path):
-        with open(pub_key_path, 'r') as f:
-            pub_key_pem = f.read()
+        with open(pub_key_path, 'r') as kf:
+            pub_key_pem = kf.read()
 
     return render_template('dashboard.html', files=files, public_key_pem=pub_key_pem)
 
@@ -218,8 +231,9 @@ def upload():
 @app.route('/encrypt', methods=['POST'])
 @login_required
 def encrypt():
-    filename = request.form.get('filename', '').strip()
-    password = request.form.get('password', '')
+    filename    = request.form.get('filename', '').strip()
+    password    = request.form.get('password', '')
+    create_share = request.form.get('create_share', 'off')
 
     if not filename or not password:
         flash('Filename and password are required.', 'danger')
@@ -236,7 +250,33 @@ def encrypt():
     result = encrypt_file(input_path, output_path, password)
     if result['success']:
         os.remove(input_path)
-        flash(f'"{filename}" encrypted successfully → "{filename}.enc"', 'success')
+
+        # Generate share token if requested
+        if create_share == 'on':
+            token = ShareToken.generate_token()
+            # Ensure token is unique
+            while ShareToken.query.filter_by(token=token).first():
+                token = ShareToken.generate_token()
+
+            share = ShareToken(
+                token          = token,
+                owner_username = current_user.username,
+                filename       = filename + '.enc',
+                original_name  = filename,
+                expires_at     = datetime.utcnow() + timedelta(days=7)
+            )
+            share.set_password(password)
+            db.session.add(share)
+            db.session.commit()
+
+            flash(
+                f'"{filename}" encrypted ✅ — Share Code: '
+                f'<strong style="font-size:18px;letter-spacing:3px;">{token}</strong> '
+                f'· Valid for 7 days · Max 10 downloads',
+                'success'
+            )
+        else:
+            flash(f'"{filename}" encrypted successfully → "{filename}.enc"', 'success')
     else:
         flash(f'Encryption failed: {result["message"]}', 'danger')
 
@@ -445,6 +485,148 @@ def download_public_key():
         return redirect(url_for('dashboard'))
     return send_file(pub_key_path, as_attachment=True,
                      download_name=f'{current_user.username}_public.pem')
+
+
+# ── Share File (Public Access) ────────────────────────────────
+
+@app.route('/share', methods=['GET', 'POST'])
+def share_access():
+    """Public page — anyone can enter a share code to download a decrypted file."""
+    if request.method == 'GET':
+        code = request.args.get('code', '').strip().upper()
+        return render_template('share.html', code=code, step='enter_code')
+
+    # POST — validate code and password then serve decrypted file
+    code     = request.form.get('code', '').strip().upper()
+    password = request.form.get('password', '')
+
+    if not code or not password:
+        flash('Share code and password are required.', 'danger')
+        return render_template('share.html', code=code, step='enter_code')
+
+    # Look up token
+    share = ShareToken.query.filter_by(token=code).first()
+
+    if not share:
+        flash('Invalid share code. Please check and try again.', 'danger')
+        return render_template('share.html', code=code, step='enter_code')
+
+    if not share.is_valid:
+        if share.is_expired:
+            flash('This share link has expired.', 'danger')
+        elif share.download_count >= share.max_downloads:
+            flash('This share link has reached its maximum downloads.', 'danger')
+        else:
+            flash('This share link is no longer active.', 'danger')
+        return render_template('share.html', code=code, step='enter_code')
+
+    if not share.check_password(password):
+        flash('Wrong decryption password. Please try again.', 'danger')
+        return render_template('share.html', code=code, step='enter_code')
+
+    # Password correct — decrypt to temp file and serve
+    upload_dir   = user_upload_dir(share.owner_username)
+    enc_path     = os.path.join(upload_dir, secure_filename(share.filename))
+
+    if not os.path.exists(enc_path):
+        flash('The original file no longer exists. The owner may have deleted it.', 'danger')
+        return render_template('share.html', code=code, step='enter_code')
+
+    # Decrypt to a temporary file
+    tmp_dir  = tempfile.mkdtemp()
+    tmp_path = os.path.join(tmp_dir, secure_filename(share.original_name))
+
+    result = decrypt_file(enc_path, tmp_path, password)
+
+    if not result['success']:
+        flash('Decryption failed. Wrong password or corrupted file.', 'danger')
+        return render_template('share.html', code=code, step='enter_code')
+
+    # Increment download count
+    share.download_count += 1
+    db.session.commit()
+
+    return send_file(
+        tmp_path,
+        as_attachment=True,
+        download_name=share.original_name
+    )
+
+
+@app.route('/share/create', methods=['POST'])
+@login_required
+def create_share():
+    """Create a share token for an already-encrypted file."""
+    filename = request.form.get('filename', '').strip()
+    password = request.form.get('password', '')
+
+    if not filename or not password:
+        flash('Filename and password are required.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    upload_dir = user_upload_dir(current_user.username)
+    file_path  = os.path.join(upload_dir, secure_filename(filename))
+
+    if not os.path.exists(file_path):
+        flash('File not found.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Verify password is correct before creating share
+    tmp_dir  = tempfile.mkdtemp()
+    tmp_path = os.path.join(tmp_dir, 'test_decrypt.tmp')
+    result   = decrypt_file(file_path, tmp_path, password)
+
+    if not result['success']:
+        flash('Wrong decryption password. Share code not created.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Clean up test file
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
+
+    # Generate unique token
+    token = ShareToken.generate_token()
+    while ShareToken.query.filter_by(token=token).first():
+        token = ShareToken.generate_token()
+
+    original_name = filename[:-4] if filename.endswith('.enc') else filename
+    share = ShareToken(
+        token          = token,
+        owner_username = current_user.username,
+        filename       = filename,
+        original_name  = original_name,
+        expires_at     = datetime.utcnow() + timedelta(days=7)
+    )
+    share.set_password(password)
+    db.session.add(share)
+    db.session.commit()
+
+    flash(
+        f'Share code created ✅ — Code: '
+        f'<strong style="font-size:18px;letter-spacing:3px;">{token}</strong> '
+        f'· Valid 7 days · Max 10 downloads',
+        'success'
+    )
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/share/revoke/<token>', methods=['POST'])
+@login_required
+def revoke_share(token):
+    """Revoke a share token — owner only."""
+    share = ShareToken.query.filter_by(
+        token=token,
+        owner_username=current_user.username
+    ).first()
+
+    if not share:
+        flash('Share token not found.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    share.is_active = False
+    db.session.commit()
+    flash(f'Share code {token} has been revoked.', 'info')
+    return redirect(url_for('dashboard'))
 
 
 # ── Run ───────────────────────────────────────────────────────────────────────
