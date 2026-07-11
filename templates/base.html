@@ -3,11 +3,57 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}SecureVault{% endblock %}</title>
+  <title>{% block title %}SecureVault – File Encryption & Digital Signature Platform{% endblock %}</title>
+
+  <!-- ── SEO META TAGS ── -->
+  <meta name="description" content="SecureVault is a free web-based file encryption platform. Encrypt files with AES-256, sign with RSA-2048 digital signatures, verify integrity, and securely share files using decryption codes."/>
+  <meta name="keywords" content="SecureVault, file encryption, AES-256, RSA digital signature, secure file sharing, encrypt files online, file integrity verification, Python Flask security"/>
+  <meta name="author" content="Mahamad Gouse N"/>
+  <meta name="robots" content="index, follow"/>
+  <link rel="canonical" href="{% block canonical %}https://securevault.onrender.com{% endblock %}"/>
+
+  <!-- ── OPEN GRAPH (LinkedIn, WhatsApp, Facebook preview) ── -->
+  <meta property="og:type"        content="website"/>
+  <meta property="og:title"       content="SecureVault – File Encryption & Digital Signature Platform"/>
+  <meta property="og:description" content="Encrypt files with AES-256, sign with RSA-2048, verify integrity and share securely. Free, fast and built on real cryptography."/>
+  <meta property="og:url"         content="https://securevault.onrender.com"/>
+  <meta property="og:site_name"   content="SecureVault"/>
+  <meta property="og:image"       content="https://securevault.onrender.com/static/og-image.png"/>
+
+  <!-- ── TWITTER CARD ── -->
+  <meta name="twitter:card"        content="summary_large_image"/>
+  <meta name="twitter:title"       content="SecureVault – File Encryption Platform"/>
+  <meta name="twitter:description" content="AES-256 file encryption + RSA-2048 digital signatures. Free web platform by Mahamad Gouse N."/>
+  <meta name="twitter:image"       content="https://securevault.onrender.com/static/og-image.png"/>
+
+  <!-- ── STRUCTURED DATA (Google Rich Results) ── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "SecureVault",
+    "url": "https://securevault.onrender.com",
+    "description": "Web-based file encryption and digital signature platform using AES-256 and RSA-2048.",
+    "applicationCategory": "SecurityApplication",
+    "operatingSystem": "Any",
+    "author": {
+      "@type": "Person",
+      "name": "Mahamad Gouse N",
+      "url": "https://linkedin.com/in/mahamad-gouse-n"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>"/>
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml"/>
 </head>
 <body>
 

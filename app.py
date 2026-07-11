@@ -629,6 +629,26 @@ def revoke_share(token):
     return redirect(url_for('dashboard'))
 
 
+# ── Sitemap ───────────────────────────────────────────────────
+
+@app.route('/sitemap.xml')
+def sitemap():
+    from flask import Response
+    return Response(
+        render_template('sitemap.xml'),
+        mimetype='application/xml'
+    )
+
+
+# ── robots.txt ────────────────────────────────────────────────
+
+@app.route('/robots.txt')
+def robots():
+    from flask import Response
+    content = "User-agent: *\nAllow: /\nSitemap: https://securevault.onrender.com/sitemap.xml\n"
+    return Response(content, mimetype='text/plain')
+
+
 # ── Run ───────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
