@@ -23,8 +23,19 @@ from modules.signature import generate_key_pair, sign_file, verify_signature
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 KEYS_FOLDER   = os.path.join(BASE_DIR, 'keys')
-ALLOWED_EXT   = {'txt', 'pdf', 'png', 'jpg', 'docx', 'xlsx', 'zip', 'py', 'json', 'csv'}
-MAX_FILE_MB   = 16
+ALLOWED_EXT   = {
+    # Documents
+    'txt', 'pdf', 'docx', 'xlsx', 'csv', 'json', 'py',
+    # Images
+    'png', 'jpg', 'jpeg', 'gif', 'webp',
+    # Archives
+    'zip', 'tar', 'gz', 'rar',
+    # Video
+    'mp4', 'mkv', 'avi', 'mov', 'wmv', 'webm', 'flv',
+    # Audio
+    'mp3', 'wav', 'aac', 'ogg',
+}
+MAX_FILE_MB   = 500  # 500 MB to support video files
 
 
 def create_app():

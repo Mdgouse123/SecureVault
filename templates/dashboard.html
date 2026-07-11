@@ -119,7 +119,7 @@
   <div class="card upload-card" id="upload">
     <div class="card-header">
       <span>📤 Upload File</span>
-      <small>Max 16MB &nbsp;·&nbsp; txt, pdf, png, jpg, docx, xlsx, zip, py, json, csv</small>
+      <small>Max 500MB &nbsp;·&nbsp; Documents, Images, Video, Audio, Archives</small>
     </div>
     <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="upload-form">
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
@@ -127,7 +127,7 @@
           <span class="upload-icon">📁</span>
         </div>
         <p class="upload-title">Click to browse or drag &amp; drop</p>
-        <p class="upload-hint">Supported: PDF, TXT, PNG, JPG, DOCX, XLSX, ZIP, PY, JSON, CSV</p>
+        <p class="upload-hint">Supported: PDF, TXT, PNG, JPG, DOCX, XLSX, ZIP, PY, JSON, CSV, <strong>MP4, MKV, AVI, MOV, MP3, WAV</strong></p>
         <span id="selectedFile" class="selected-file"></span>
       </div>
       <input type="file" id="fileInput" name="file" style="display:none" onchange="showFileName(this)"/>
@@ -171,9 +171,11 @@
               <span class="file-type-icon">
                 {% if file.is_encrypted %}🔒
                 {% elif file.name.endswith('.pdf') %}📕
-                {% elif file.name.endswith(('.png','.jpg','.jpeg')) %}🖼️
+                {% elif file.name.endswith(('.png','.jpg','.jpeg','.gif','.webp')) %}🖼️
                 {% elif file.name.endswith('.py') %}🐍
-                {% elif file.name.endswith('.zip') %}🗜️
+                {% elif file.name.endswith(('.zip','.tar','.gz','.rar')) %}🗜️
+                {% elif file.name.endswith(('.mp4','.mkv','.avi','.mov','.wmv','.webm','.flv')) %}🎬
+                {% elif file.name.endswith(('.mp3','.wav','.aac','.ogg')) %}🎵
                 {% else %}📄{% endif %}
               </span>
               <span class="file-name-text">{{ file.name }}</span>
