@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}SecureVault – Secure File Protection Platform{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ── -->
+<section class="hero" id="home">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🔐 Military-Grade Security</div>
+    <h1 class="hero-title">
+      Protect Your Files with<br/>
+      <span class="gradient-text">AES-256 Encryption</span>
+    </h1>
+    <p class="hero-desc">
+      SecureVault gives you password-based file encryption, RSA digital signatures,
+      and integrity verification — all in one clean, easy-to-use web platform.
+    </p>
+    <div class="hero-actions">
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+        🚀 Get Started Free
+      </a>
+      <a href="#how-it-works" class="btn btn-outline btn-lg">
+        ▶ See How It Works
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="stat-value">AES-256</span>
+        <span class="stat-label">Encryption</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="stat-value">RSA-2048</span>
+        <span class="stat-label">Digital Signatures</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="stat-value">100%</span>
+        <span class="stat-label">Private & Secure</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="vault-card">
+      <div class="vault-icon-wrap">
+        <div class="vault-ring ring1"></div>
+        <div class="vault-ring ring2"></div>
+        <div class="vault-ring ring3"></div>
+        <span class="vault-center-icon">🔐</span>
+      </div>
+      <div class="vault-label">Your Vault is Secured</div>
+      <div class="vault-features">
+        <div class="vf-item"><span class="vf-dot green"></span> AES-256 Active</div>
+        <div class="vf-item"><span class="vf-dot blue"></span> RSA Keys Generated</div>
+        <div class="vf-item"><span class="vf-dot purple"></span> Integrity Verified</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="section features-section" id="features">
+  <div class="section-header">
+    <div class="section-badge">✨ Features</div>
+    <h2 class="section-title">Everything You Need to Secure Your Files</h2>
+    <p class="section-desc">A complete security toolkit built on industry-standard cryptography.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="fc-icon-wrap" style="background:#e3f0fd;">
+        <span class="fc-icon">🛡️</span>
+      </div>
+      <h3>AES-256 Encryption</h3>
+      <p>Password-based AES-256-CBC encryption with PBKDF2 key derivation. Your password never leaves your machine.</p>
+      <div class="fc-tag">Encryption</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="fc-icon-wrap" style="background:#f3e5f5;">
+        <span class="fc-icon">✍️</span>
+      </div>
+      <h3>RSA Digital Signatures</h3>
+      <p>Sign any file with your RSA-2048 private key. Share the public key so anyone can verify your file.</p>
+      <div class="fc-tag" style="background:#f3e5f5;color:#6a1b9a;">Signatures</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="fc-icon-wrap" style="background:#e8f5e9;">
+        <span class="fc-icon">🔍</span>
+      </div>
+      <h3>Integrity Verification</h3>
+      <p>Instantly detect if a file was tampered with. One click tells you if the signature is valid or broken.</p>
+      <div class="fc-tag" style="background:#e8f5e9;color:#2e7d32;">Verification</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="fc-icon-wrap" style="background:#fff3e0;">
+        <span class="fc-icon">🔑</span>
+      </div>
+      <h3>Key Management</h3>
+      <p>Generate RSA-2048 key pairs per account. Private key stays on the server, public key is shareable.</p>
+      <div class="fc-tag" style="background:#fff3e0;color:#e65100;">Keys</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="fc-icon-wrap" style="background:#e8eaf6;">
+        <span class="fc-icon">👤</span>
+      </div>
+      <h3>User Authentication</h3>
+      <p>Secure account system with hashed passwords, session management, and per-user file isolation.</p>
+      <div class="fc-tag" style="background:#e8eaf6;color:#283593;">Auth</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="fc-icon-wrap" style="background:#fce4ec;">
+        <span class="fc-icon">📊</span>
+      </div>
+      <h3>Dashboard & Reports</h3>
+      <p>Visual dashboard with file stats, activity overview, encryption status, and quick-action controls.</p>
+      <div class="fc-tag" style="background:#fce4ec;color:#880e4f;">Dashboard</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section how-section" id="how-it-works">
+  <div class="section-header">
+    <div class="section-badge">⚙️ Process</div>
+    <h2 class="section-title">How SecureVault Works</h2>
+    <p class="section-desc">Four simple steps to fully secure your files.</p>
+  </div>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-number">01</div>
+      <div class="step-icon">📝</div>
+      <h3>Register & Login</h3>
+      <p>Create a free account. Your password is hashed with bcrypt and never stored in plain text.</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step-card">
+      <div class="step-number">02</div>
+      <div class="step-icon">📤</div>
+      <h3>Upload Your File</h3>
+      <p>Upload any file — PDF, image, document, code. Files are stored in your private vault.</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step-card">
+      <div class="step-number">03</div>
+      <div class="step-icon">🔒</div>
+      <h3>Encrypt & Sign</h3>
+      <p>Encrypt with AES-256 using a password. Sign with your RSA private key for authenticity.</p>
+    </div>
+    <div class="step-arrow">→</div>
+    <div class="step-card">
+      <div class="step-number">04</div>
+      <div class="step-icon">✅</div>
+      <h3>Verify & Share</h3>
+      <p>Verify the signature anytime to check integrity. Download and share securely.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2>Ready to Secure Your Files?</h2>
+    <p>Join SecureVault today — free, fast, and built on real cryptography.</p>
+    <div class="cta-actions">
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">🚀 Create Free Account</a>
+      <a href="{{ url_for('login') }}" class="btn btn-outline-white btn-lg">Login to Dashboard</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

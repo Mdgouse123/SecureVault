@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – SecureVault{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <!-- ── PAGE HEADER ── -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Your Vault 🗂️</h1>
+      <p class="dash-subtitle">Welcome back, <strong>{{ current_user.username }}</strong> — manage your encrypted files below.</p>
+    </div>
+    <div class="dash-header-actions">
+      {% if not current_user.has_keys %}
+        <form method="POST" action="{{ url_for('generate_keys') }}" id="keysForm">
+          <button type="submit" class="btn btn-warning" id="keysBtn">
+            ⚙️ Generate RSA Keys
+          </button>
+        </form>
+      {% else %}
+        <span class="key-ready-badge">🔑 RSA Keys Ready</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── STATS CARDS ── -->
+  <div class="stats-grid">
+    <div class="stat-card" style="--accent:#1565c0;">
+      <div class="sc-icon" style="background:#e3f0fd;">📂</div>
+      <div class="sc-info">
+        <div class="sc-value">{{ files|length }}</div>
+        <div class="sc-label">Total Files</div>
+      </div>
+      <div class="sc-bg-icon">📂</div>
+    </div>
+    <div class="stat-card" style="--accent:#1b5e20;">
+      <div class="sc-icon" style="background:#e8f5e9;">🔒</div>
+      <div class="sc-info">
+        <div class="sc-value">{{ files|selectattr('is_encrypted')|list|length }}</div>
+        <div class="sc-label">Encrypted Files</div>
+      </div>
+      <div class="sc-bg-icon">🔒</div>
+    </div>
+    <div class="stat-card" style="--accent:#6a1b9a;">
+      <div class="sc-icon" style="background:#f3e5f5;">✍️</div>
+      <div class="sc-info">
+        <div class="sc-value">{{ files|selectattr('has_signature')|list|length }}</div>
+        <div class="sc-label">Signed Files</div>
+      </div>
+      <div class="sc-bg-icon">✍️</div>
+    </div>
+    <div class="stat-card" style="--accent:#e65100;">
+      <div class="sc-icon" style="background:#fff3e0;">📄</div>
+      <div class="sc-info">
+        <div class="sc-value">{{ files|rejectattr('is_encrypted')|list|length }}</div>
+        <div class="sc-label">Plain Files</div>
+      </div>
+      <div class="sc-bg-icon">📄</div>
+    </div>
+  </div>
+
+  <!-- ── CHART ROW ── -->
+  <div class="charts-row">
+    <!-- Doughnut chart -->
+    <div class="card chart-card">
+      <div class="card-header">
+        <span>📊 File Security Overview</span>
+      </div>
+      <div class="chart-body">
+        <canvas id="securityChart" width="200" height="200"></canvas>
+        <div class="chart-legend">
+          <div class="cl-item"><span class="cl-dot" style="background:#1565c0;"></span> Encrypted</div>
+          <div class="cl-item"><span class="cl-dot" style="background:#6a1b9a;"></span> Signed</div>
+          <div class="cl-item"><span class="cl-dot" style="background:#e0e0e0;"></span> Plain</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity / Quick Actions -->
+    <div class="card quick-card">
+      <div class="card-header"><span>⚡ Quick Actions</span></div>
+      <div class="quick-body">
+        <button class="quick-action-btn" onclick="document.getElementById('uploadArea').scrollIntoView({behavior:'smooth'})">
+          <span class="qa-icon" style="background:#e3f0fd;">📤</span>
+          <span>Upload New File</span>
+          <span class="qa-arrow">→</span>
+        </button>
+        {% if not current_user.has_keys %}
+        <button class="quick-action-btn" onclick="document.getElementById('keysForm').submit()">
+          <span class="qa-icon" style="background:#fff3e0;">🔑</span>
+          <span>Generate RSA Keys</span>
+          <span class="qa-arrow">→</span>
+        </button>
+        {% endif %}
+        <div class="quick-action-btn info-btn">
+          <span class="qa-icon" style="background:#e8f5e9;">🛡️</span>
+          <span>AES-256-CBC Active</span>
+          <span class="qa-status green">ON</span>
+        </div>
+        <div class="quick-action-btn info-btn">
+          <span class="qa-icon" style="background:#f3e5f5;">✍️</span>
+          <span>RSA-2048 Keys</span>
+          <span class="qa-status {% if current_user.has_keys %}green{% else %}red{% endif %}">
+            {% if current_user.has_keys %}ON{% else %}OFF{% endif %}
+          </span>
+        </div>
+        {% if current_user.has_keys %}
+        <button class="quick-action-btn" onclick="openKeyModal()">
+          <span class="qa-icon" style="background:#e8eaf6;">🔑</span>
+          <span>View Public Key</span>
+          <span class="qa-arrow">→</span>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── UPLOAD CARD ── -->
+  <div class="card upload-card" id="upload">
+    <div class="card-header">
+      <span>📤 Upload File</span>
+      <small>Max 16MB &nbsp;·&nbsp; txt, pdf, png, jpg, docx, xlsx, zip, py, json, csv</small>
+    </div>
+    <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="upload-form">
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon-wrap">
+          <span class="upload-icon">📁</span>
+        </div>
+        <p class="upload-title">Click to browse or drag &amp; drop</p>
+        <p class="upload-hint">Supported: PDF, TXT, PNG, JPG, DOCX, XLSX, ZIP, PY, JSON, CSV</p>
+        <span id="selectedFile" class="selected-file"></span>
+      </div>
+      <input type="file" id="fileInput" name="file" style="display:none" onchange="showFileName(this)"/>
+      <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+        📤 Upload File
+      </button>
+    </form>
+  </div>
+
+  <!-- ── FILES TABLE ── -->
+  <div class="card" id="files">
+    <div class="card-header">
+      <span>📂 My Files
+        <span class="file-count-badge">{{ files|length }}</span>
+      </span>
+      <div class="table-controls">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="fileSearch" placeholder="Search files..."
+                 oninput="filterFiles(this.value)" class="search-input"/>
+        </div>
+      </div>
+    </div>
+
+    {% if files %}
+    <div class="table-wrap">
+      <table class="file-table" id="fileTable">
+        <thead>
+          <tr>
+            <th>📄 File Name</th>
+            <th>📦 Size</th>
+            <th>🔒 Encryption</th>
+            <th>✍️ Signature</th>
+            <th>⚡ Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for file in files %}
+          <tr class="file-row">
+            <td class="file-name-cell">
+              <span class="file-type-icon">
+                {% if file.is_encrypted %}🔒
+                {% elif file.name.endswith('.pdf') %}📕
+                {% elif file.name.endswith(('.png','.jpg','.jpeg')) %}🖼️
+                {% elif file.name.endswith('.py') %}🐍
+                {% elif file.name.endswith('.zip') %}🗜️
+                {% else %}📄{% endif %}
+              </span>
+              <span class="file-name-text">{{ file.name }}</span>
+            </td>
+            <td class="file-size">{{ file.size }}</td>
+            <td>
+              {% if file.is_encrypted %}
+                <span class="status-badge encrypted">🔒 Encrypted</span>
+              {% else %}
+                <span class="status-badge plain">📄 Plain</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if file.has_signature %}
+                <span class="status-badge signed">✍️ Signed</span>
+              {% else %}
+                <span class="status-badge unsigned">— No Sig</span>
+              {% endif %}
+            </td>
+            <td class="actions-cell">
+              {% if not file.is_encrypted %}
+              <button class="action-btn encrypt-btn" title="Encrypt file"
+                      onclick="openModal('encryptModal','{{ file.name }}')">
+                🔒 Encrypt
+              </button>
+              {% endif %}
+
+              {% if file.is_encrypted %}
+              <button class="action-btn decrypt-btn" title="Decrypt file"
+                      onclick="openModal('decryptModal','{{ file.name }}')">
+                🔓 Decrypt
+              </button>
+              {% endif %}
+
+              {% if not file.is_encrypted %}
+              <form method="POST" action="{{ url_for('sign') }}" style="display:inline">
+                <input type="hidden" name="filename" value="{{ file.name }}"/>
+                <button type="submit" class="action-btn sign-btn" title="Sign file"
+                        {% if not current_user.has_keys %}disabled{% endif %}>
+                  ✍️ Sign
+                </button>
+              </form>
+              {% endif %}
+
+              {% if file.has_signature %}
+              <form method="POST" action="{{ url_for('verify') }}" style="display:inline">
+                <input type="hidden" name="filename" value="{{ file.name }}"/>
+                <button type="submit" class="action-btn verify-btn" title="Verify signature">
+                  🔍 Verify
+                </button>
+              </form>
+              {% endif %}
+
+              <a href="{{ url_for('download', filename=file.name) }}"
+                 class="action-btn download-btn" title="Download file">
+                ⬇️ Download
+              </a>
+
+              <button class="action-btn rename-btn" title="Rename file"
+                      onclick="openRenameModal('{{ file.name }}')">
+                ✏️ Rename
+              </button>
+
+              <form method="POST" action="{{ url_for('delete', filename=file.name) }}"
+                    style="display:inline"
+                    onsubmit="return confirm('Delete {{ file.name }}? This cannot be undone.')">
+                <button type="submit" class="action-btn delete-btn" title="Delete file">
+                  🗑️
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination info -->
+    <div class="table-footer">
+      <span class="table-info">Showing {{ files|length }} file{{ 's' if files|length != 1 }}</span>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>Your vault is empty</h3>
+      <p>Upload your first file to start encrypting and signing.</p>
+      <button class="btn btn-primary" onclick="document.getElementById('uploadArea').scrollIntoView({behavior:'smooth'})">
+        📤 Upload a File
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ── ENCRYPT MODAL ── -->
+<div class="modal-overlay" id="encryptModal" onclick="closeModal(event,'encryptModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <span class="modal-icon">🔒</span>
+        <h3>Encrypt File</h3>
+      </div>
+      <button class="modal-close" onclick="closeModalById('encryptModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-file-info">
+        <span class="mfi-label">File:</span>
+        <span class="mfi-name" id="encryptFileName"></span>
+      </div>
+      <form method="POST" action="{{ url_for('encrypt') }}">
+        <input type="hidden" name="filename" id="encryptFileInput"/>
+        <div class="form-group">
+          <label>Encryption Password</label>
+          <div class="input-with-toggle">
+            <input type="password" name="password" id="encryptPw"
+                   placeholder="Enter a strong password" required minlength="4"/>
+            <button type="button" class="toggle-pw" onclick="togglePassword('encryptPw')">👁</button>
+          </div>
+          <div class="pw-strength-wrap">
+            <div class="pw-strength-bar"><div class="pw-strength-fill" id="encPwFill"></div></div>
+            <span class="pw-strength-label" id="encPwLabel"></span>
+          </div>
+          <small class="hint">⚠️ Remember this password — it's the only way to decrypt your file.</small>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">🔒 Encrypt Now</button>
+          <button type="button" class="btn btn-outline" onclick="closeModalById('encryptModal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── DECRYPT MODAL ── -->
+<div class="modal-overlay" id="decryptModal" onclick="closeModal(event,'decryptModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <span class="modal-icon">🔓</span>
+        <h3>Decrypt File</h3>
+      </div>
+      <button class="modal-close" onclick="closeModalById('decryptModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-file-info">
+        <span class="mfi-label">File:</span>
+        <span class="mfi-name" id="decryptFileName"></span>
+      </div>
+      <form method="POST" action="{{ url_for('decrypt') }}">
+        <input type="hidden" name="filename" id="decryptFileInput"/>
+        <div class="form-group">
+          <label>Decryption Password</label>
+          <div class="input-with-toggle">
+            <input type="password" name="password" id="decryptPw"
+                   placeholder="Enter the encryption password" required/>
+            <button type="button" class="toggle-pw" onclick="togglePassword('decryptPw')">👁</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">🔓 Decrypt Now</button>
+          <button type="button" class="btn btn-outline" onclick="closeModalById('decryptModal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Pass file counts to JS for chart -->
+<script>
+  window.VAULT_DATA = {
+    encrypted: {{ files|selectattr('is_encrypted')|list|length }},
+    signed:    {{ files|selectattr('has_signature')|list|length }},
+    plain:     {{ files|rejectattr('is_encrypted')|list|length }}
+  };
+</script>
+
+<!-- ── RENAME MODAL ── -->
+<div class="modal-overlay" id="renameModal" onclick="closeModal(event,'renameModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <span class="modal-icon">✏️</span>
+        <h3>Rename File</h3>
+      </div>
+      <button class="modal-close" onclick="closeModalById('renameModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-file-info">
+        <span class="mfi-label">Current name:</span>
+        <span class="mfi-name" id="renameOldName"></span>
+      </div>
+      <form method="POST" action="{{ url_for('rename_file') }}">
+        <input type="hidden" name="old_filename" id="renameOldInput"/>
+        <div class="form-group">
+          <label>New File Name</label>
+          <input type="text" name="new_filename" id="renameNewInput"
+                 class="rename-input" placeholder="Enter new file name" required/>
+          <small class="hint">Keep the same extension (e.g. .txt, .enc, .pdf)</small>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">✏️ Rename</button>
+          <button type="button" class="btn btn-outline" onclick="closeModalById('renameModal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ── PUBLIC KEY MODAL ── -->
+<div class="modal-overlay" id="keyModal" onclick="closeModal(event,'keyModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <span class="modal-icon">🔑</span>
+        <h3>Your Public Key</h3>
+      </div>
+      <button class="modal-close" onclick="closeModalById('keyModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-light);margin-bottom:4px;">
+        Share this public key so others can verify files you signed.
+        Keep your <strong>private key</strong> secret.
+      </p>
+      <div class="key-viewer" id="publicKeyContent">{{ public_key_pem or 'No public key found. Generate your RSA keys first.' }}</div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="copyKeyBtn" onclick="copyPublicKey()">📋 Copy Key</button>
+        <a href="{{ url_for('download_public_key') }}" class="btn btn-outline">⬇️ Download .pem</a>
+        <button type="button" class="btn btn-outline" onclick="closeModalById('keyModal')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
