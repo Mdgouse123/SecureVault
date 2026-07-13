@@ -10,6 +10,11 @@
 <img width="454" height="286" alt="Screenshot 2026-07-13 141922" src="https://github.com/user-attachments/assets/fd415983-42b6-4e42-bae9-7feccb057cf8" />
 <img width="493" height="307" alt="Screenshot 2026-07-13 142001" src="https://github.com/user-attachments/assets/ac1deef3-db7e-4e90-8d26-83d8145e4fc5" />
 
+# Link to access the website
+---
+https://securevault-pypl.onrender.com/dashboard
+---
+
 # 🔐 SecureVault — File Encryption & Digital Signature Platform
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python&logoColor=white)
