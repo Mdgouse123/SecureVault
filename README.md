@@ -1,3 +1,10 @@
+<img width="454" height="286" alt="Screenshot 2026-07-13 141922" src="https://github.com/user-attachments/assets/fd415983-42b6-4e42-bae9-7feccb057cf8" />
+<img width="1284" height="305" alt="Screenshot 2026-07-13 141740" src="https://github.com/user-attachments/assets/1e18a653-121f-4222-8aec-64fb71fceb3b" />
+<img width="700" height="658" alt="Screenshot 2026-07-13 141726" src="https://github.com/user-attachments/assets/5257a647-dddb-45c6-bb7b-54ee8b27bc38" />
+<img width="1289" height="306" alt="Screenshot 2026-07-13 141641" src="https://github.com/user-attachments/assets/56817595-1129-49d2-b5bd-32e599e6d1b6" />
+<img width="1225" height="767" alt="Screenshot 2026-07-13 141425" src="https://github.com/user-attachments/assets/a7962ddc-4ef5-4322-b26c-472e4fa6e6bd" />
+<img width="1919" height="992" alt="Screenshot 2026-07-13 141324" src="https://github.com/user-attachments/assets/695a2d46-00e2-4bc2-8708-937b158ba909" />
+<img width="1917" height="976" alt="Screenshot 2026-07-13 141307" src="https://github.com/user-attachments/assets/c0b5d1a9-c61c-49eb-af44-b31e38520d47" />
 # 🔐 SecureVault — File Encryption & Digital Signature Platform
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python&logoColor=white)
