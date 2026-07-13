@@ -11,9 +11,8 @@
 <img width="493" height="307" alt="Screenshot 2026-07-13 142001" src="https://github.com/user-attachments/assets/ac1deef3-db7e-4e90-8d26-83d8145e4fc5" />
 
 # Link to access the website
----
+
 https://securevault-pypl.onrender.com/dashboard
----
 
 # 🔐 SecureVault — File Encryption & Digital Signature Platform
 
